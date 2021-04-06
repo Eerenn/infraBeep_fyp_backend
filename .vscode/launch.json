@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "ee_fyp_sls:handler.signupUser (nodejs12.x)",
+            "invokeTarget": {
+                "target": "code",
+                "projectRoot": "sls-test-signupUser",
+                "lambdaHandler": "handler.signupUser"
+            },
+            "lambda": {
+                "runtime": "nodejs12.x",
+                "payload": {"json": 
+                    {
+                    "email" : "zxc@qwe.com",
+                    "password" : "qwesad",
+                    "name" : "asdasd",
+                    "userCode" : null}
+                },
+                "environmentVariables": {}
+            }
+        }
+    ]
+}

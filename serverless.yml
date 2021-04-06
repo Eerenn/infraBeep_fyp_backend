@@ -1,0 +1,165 @@
+service: sls
+frameworkVersion: '2'
+
+custom: 
+  settings:
+    DEVICES_TABLE: devices
+    PAYLOADS_TABLE: payloads
+    USER_TABLE: user
+    IMAGE_BUCKET: ee-fyp-image-bucket
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  region: ap-southeast-1
+  environment: ${self:custom.settings}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - s3:*
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.DEVICES_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.PAYLOADS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.USER_TABLE}"
+        - "arn:aws:s3:::${self:custom.settings.IMAGE_BUCKET}"
+        
+
+functions:
+  signupUser:
+    handler: handler.signupUser
+    events:
+      - http:
+          path: /user/register
+          method: post
+  loginUser:
+    handler: handler.loginUser
+    events:
+      - http:
+          path: /user/login/{email}/{password}
+          method: get
+  getUsers:
+    handler: handler.getUsers
+    events:
+      - http:
+          path: /users/{userCode}
+          method: get
+  updateUser:
+    handler: handler.updateUser
+    events:
+      - http:
+          path: /user/{id}
+          method: put
+  updateUserCode:
+    handler: handler.updateUserCode
+    events:
+      - http:
+          path: /user/code/{id}
+          method: put
+  createPayload:
+    handler: handler.createPayload
+    events:
+      - http:
+          path: /payload
+          method: post
+  getPayload:
+    handler: handler.getPayload
+    events:
+      - http:
+          path: /payload/{id}
+          method: get
+  createDevice:
+    handler: handler.createDevice
+    events:
+      - http:
+          path: /device
+          method: post
+  # getDevice:
+  #   handler: handler.getDevice
+  #   events:
+  #   - http:
+  #       path: /device/{id}
+  #       method: get
+  getDevices:
+    handler: handler.getDevices
+    events:
+    - http:
+        path: /devices/{userCode}
+        method: get
+  getDevicePayload:
+    handler: handler.getDevicePayload
+    events:
+    - http:
+        path: /device/{id}/payload/{name}
+        method: get
+  updateDevice:
+    handler: handler.updateDevice
+    events:
+      - http:
+          path: /device/{id}
+          method: put
+  deleteDevice:
+    handler: handler.deleteDevice
+    events:
+      - http:
+          path: /device/{id}
+          method: delete
+  uploadImage:
+    handler: image.uploadImage
+    events:
+      - http:
+          path: /image-upload
+          method: POST
+
+resources:
+  Resources:
+    DevicesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.DEVICES_TABLE}
+    PayloadsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.PAYLOADS_TABLE}
+    UserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "id"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "id"
+          KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.USER_TABLE}
+    ImageUploadBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName: ${self:custom.settings.IMAGE_BUCKET}
+            AccessControl: PublicRead
